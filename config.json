@@ -1,0 +1,12 @@
+{
+  "userSettings": {
+    "autoExecutionPolicy": "CASCADE_COMMANDS_AUTO_EXECUTION_OFF",
+    "enableTerminalSandbox": false,
+    "nonWorkspaceFileAccessPolicy": "AGENT_SETTING_POLICY_ALLOW",
+    "permissionGrantsV2Migrated": true,
+    "permissionPreset": "AGENT_PERMISSION_PRESET_TURBO",
+    "remoteControlHostname": "arch-rising-vertex",
+    "sandboxEnabledAtV2Migration": true,
+    "themeMode": "THEME_MODE_INHERIT"
+  }
+}

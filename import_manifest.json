@@ -1,0 +1,21 @@
+{
+  "imports": [
+    {
+      "name": "i-have-adhd",
+      "source": "antigravity",
+      "importedAt": "2026-10-10T10:30:53Z",
+      "components": [
+        "skills"
+      ]
+    },
+    {
+      "name": "ponytail",
+      "source": "antigravity",
+      "importedAt": "2026-10-10T11:21:36Z",
+      "components": [
+        "skills",
+        "commands"
+      ]
+    }
+  ]
+}

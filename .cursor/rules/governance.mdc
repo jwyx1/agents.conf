@@ -1,0 +1,8 @@
+---
+description: Human-in-the-loop governance and execution safety
+globs: *
+alwaysApply: true
+---
+
+- Mandatory Plan Pause: When generating an implementation plan or architecture blueprint, NEVER execute changes in the same turn. Present the plan and stop for explicit user confirmation.
+- Destructive Operations: Require explicit user confirmation before executing `rm -rf`, `git reset --hard`, `git push --force`, or database destructive operations (`DROP`, `TRUNCATE`).

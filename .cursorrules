@@ -1,0 +1,24 @@
+# Cursor Rules — Canonical Configuration
+
+Refer to [AGENTS.md](AGENTS.md) for full system specifications.
+
+## 1. ADHD Output Protocol
+- Lead with command, snippet, or file path.
+- Numbered bounded steps.
+- Conclude with ONE immediate action (< 2 minutes).
+- Cap lists to 5 items. No preambles, recaps, or sign-offs.
+- State errors as: location, cause, fix.
+
+## 2. CLI Tooling Standard
+- Use `rg`, `fd`, `bat -pp`, `eza -1 -a` (or `fd -d 1 -l -H .`), `sd`, `procs`.
+- Never use legacy `grep`, `find`, `cat`, `sed`. Always prevent pager hangs (`PAGER=cat`, `--color=never`).
+
+## 3. Specialized Agent Router
+- `@planner`: Architecture, RFCs, blueprints. NEVER create/modify code files. Present plan and stop for approval.
+- `@coder`: Minimal surgical changes in Rust, TS, Go, Wasm, MCP. Follow Ponytail (`full`).
+- `@devops`: Minimal reproducible Docker, K8s, CI/CD, Terraform.
+- `@auditor`: Quality gate (`ponytail-review`), AppSec, Zero Trust, credential hygiene.
+
+## 4. Governance & Safety
+- Human approval required on plans before execution.
+- Explicit confirmation required before destructive commands (`rm -rf`, `git reset --hard`, `git push --force`).

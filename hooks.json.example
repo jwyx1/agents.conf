@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/agy_statusline.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

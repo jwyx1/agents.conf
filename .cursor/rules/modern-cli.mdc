@@ -1,0 +1,12 @@
+---
+description: High-performance modern CLI tooling mandate
+globs: *
+alwaysApply: true
+---
+
+When executing terminal commands or bash scripts:
+- Never use legacy GNU built-ins (`grep`, `find`, `cat`, `ls`, `sed`).
+- Mandatory binaries: `rg`, `fd`, `bat -pp`, `eza -1 -a` (or `fd -d 1 -l -H .`), `sd`, `procs`, `dust`, `duf`.
+- Non-interactive flags: always add `--color=never` and avoid pager hangs (`PAGER=cat`, `bat -pp`, `procs --pager=disable`).
+- In scripts with `set -e`, append `|| true` on `rg` if no-match is acceptable.
+- Fallback gracefully to POSIX utilities only if `command -v <tool>` fails.

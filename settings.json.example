@@ -1,0 +1,21 @@
+{
+  "artifactReviewPolicy": "always-proceed",
+  "colorScheme": "dark",
+  "model": "Gemini 3.8 Flash (Medium)",
+  "permissions": {
+    "allow": [
+      "command(agy)"
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 ~/.gemini/scripts/agy_statusline.py",
+    "enabled": true,
+    "stack_with_default": true
+  },
+  "trustedWorkspaces": [
+    "~",
+    "~/.gemini",
+    "~/Projects"
+  ]
+}

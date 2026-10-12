@@ -1,0 +1,20 @@
+# Windsurf Cascade Rules
+
+Refer to [AGENTS.md](AGENTS.md) for complete architecture and guidelines.
+
+## Protocol Highlights
+1. **ADHD Output Style**:
+   - Lead with answer, next command, or diff.
+   - Bounded steps; conclude with one action doable in < 2 minutes.
+   - Cap lists to 5 items; zero preamble or fluff.
+2. **Modern CLI Tooling**:
+   - Use `rg`, `fd`, `bat -pp`, `eza -1 -a` (or `fd -d 1 -l -H .`), `sd`, `procs`.
+   - Prevent pager hangs (`PAGER=cat`, `--color=never`).
+3. **Specialized Agents Router**:
+   - `@planner`: Systems design, RFCs, plans. ZERO CODE EXECUTION. Stop for user approval.
+   - `@coder`: Surgical code (Rust, TS, Go, Wasm, MCP). Follow Ponytail.
+   - `@devops`: Reproducible infra, Docker, K8s, CI/CD.
+   - `@auditor`: Quality & security gate. Review diffs with `ponytail-review`.
+4. **Governance**:
+   - Never chain plan creation with immediate execution.
+   - Always confirm before destructive operations.
