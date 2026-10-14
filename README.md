@@ -1,6 +1,6 @@
-# agy.conf — Universal & Agnostic AI Agent Operating Configuration
+# agents.conf — Universal & Agnostic AI Agent Operating Configuration
 
-> **Repositorio agnóstico de configuración y orquestación multi-agente** para **Antigravity (AGY)**, **GitHub Copilot**, **Cursor**, **Windsurf**, **Claude Code** y cualquier agente de IA compatible.
+> **Repositorio agnóstico de configuración, guardrails y orquestación multi-agente** para **Antigravity (AGY)**, **GitHub Copilot**, **Cursor**, **Windsurf**, **Claude Code** y cualquier agente de IA compatible.
 
 ---
 
@@ -39,6 +39,16 @@ flowchart LR
 | **Polyglot Coder** | `@coder` | `languages-code`, `ponytail` | `rust-refactoring-specialist`, `frontend-developer`, `mcp-builder`, `webassembly-engineer` | Implementación quirúrgica con diffs mínimos en Rust, TS, Go, Wasm y MCP. Aplica Ponytail (`lite`, `full`, `ultra`). |
 | **Platform DevOps** | `@devops` | `platform-devops`, `ponytail` | `devops-automator`, `platform-engineer`, `sre-site-reliability-engineer`, `database-reliability-engineer`, `finops-engineer` | Infraestructura reproducible: Dockerfiles, K8s manifests, GitHub Actions, HA DB y FinOps sin sobre-ingeniería. |
 | **Security & QA Auditor** | `@auditor` | `review-quality`, `security-audit`, `ponytail-review` | `code-reviewer`, `minimal-change-engineer`, `test-automation-engineer`, `cloud-security-architect`, `application-security-engineer`, `penetration-tester` | Puerta integral de calidad y seguridad. `ponytail-review` (Must fix, Should fix, Nice to have), Zero Trust, AppSec OWASP. |
+
+---
+
+## 🛡️ Sidecar Laya: Guardrails de Seguridad en Tiempo Real (<2ms)
+
+El repositorio incluye en [`sidecars/laya/`](sidecars/laya/) el motor determinista de guardrails no autorregresivo:
+- **Intercepción Zero-Latency (`<2ms`)**: Evalúa comandos antes de su ejecución mediante hooks de `PreToolUse`.
+- **Bloqueo Determinista (`BLOCK`)**: Comandos críticos (`rm -rf /`, `DROP DATABASE`, `mkfs`, eliminaciones masivas) son bloqueados de raíz antes de que el subshell los reciba.
+- **Solicitud de Confirmación (`CONFIRM`)**: Operaciones de riesgo (`git push --force`, `git reset --hard`) requieren aprobación explícita.
+- **Detección de Secretos**: Escaneo de variables y claves API en payloads de comandos.
 
 ---
 
@@ -84,15 +94,15 @@ Se prohíbe el uso de comandos lentos POSIX tradicionales en tareas automatizada
 ├── README.md                  # Documentación global del framework
 ├── .cursorrules               # Entrada nativa para Cursor
 ├── .cursor/rules/             # Reglas modulares .mdc para Cursor
-├── .github/                   # Instrucciones para GitHub Copilot
-│   └── copilot-instructions.md
+├── .github/                   # Instrucciones para GitHub Copilot y CI
+│   ├── copilot-instructions.md
+│   └── workflows/validate-config.yml
 ├── .windsurfrules              # Entrada nativa para Windsurf
+├── bin/
+│   ├── agents-conf            # CLI universal de orquestación, symlinks y sync
+│   └── agy-conf               # Alias retrocompatible
 ├── config.json                # Configuración base de políticas y presets
-├── settings.json.example      # Plantilla para settings del CLI de Antigravity
-├── hooks.json.example         # Plantilla portable de hooks pre-tool
-├── import_manifest.json       # Manifiesto de imports y extensiones
-├── mcp_config.json            # Configuración de servidores MCP
-├── install.sh                 # Script instalador/sincronizador a ~/.gemini
+├── install.sh                 # Script instalador/sincronizador universal
 ├── rules/                     # Reglas canónicas del sistema
 │   ├── agent-personas.md
 │   ├── governance.md
@@ -100,6 +110,11 @@ Se prohíbe el uso de comandos lentos POSIX tradicionales en tareas automatizada
 │   ├── it-agents-directory.md
 │   ├── modern-cli-tooling.md
 │   └── projects-layout.md
+├── sidecars/
+│   └── laya/                  # Sidecar de guardrails, router y escáner (<2ms)
+│       ├── bin/laya-hook      # Launcher portable de hooks
+│       ├── hooks/native_hook.py
+│       └── src/laya_agy_sidecar/
 ├── skills/                    # Suites completas de habilidades y referencias
 │   ├── architecture-planning/
 │   ├── languages-code/
@@ -119,34 +134,34 @@ Se prohíbe el uso de comandos lentos POSIX tradicionales en tareas automatizada
 ### 1. Puesta en marcha en un entorno nuevo (Trabajo o Casa)
 Clona el repositorio e instala los enlaces vivos en 30 segundos:
 ```bash
-git clone https://github.com/jwyx1/agy.conf.git ~/Projects/personal/agy.conf
-cd ~/Projects/personal/agy.conf
+git clone https://github.com/jwyx1/agents.conf.git ~/Projects/personal/agents.conf
+cd ~/Projects/personal/agents.conf
 ./install.sh
 ```
-Esto crea los enlaces simbólicos en:
-- `~/.gemini/` (Antigravity en casa)
-- `~/.claude/CLAUDE.md` (Claude Code en el trabajo/casa)
-- `~/.config/AGENTS.md` (Puntero global universal)
-- `~/.local/bin/agy-conf` (CLI global disponible en tu `$PATH`)
+Esto crea automáticamente:
+- `~/.gemini/` enlazado a las reglas, skills y statusline.
+- `~/.gemini/config/hooks.json` configurado con Laya Guardrail en tiempo real.
+- `~/.claude/CLAUDE.md` para Claude Code.
+- `~/.config/AGENTS.md` como puntero global universal.
+- `agents-conf` y `agy-conf` disponibles en tu `$PATH` (`~/.local/bin/`).
 
 ### 2. Uso en el trabajo con GitHub Copilot y Claude Code
-- **Claude Code**: Al abrir cualquier terminal, lee automáticamente `~/.claude/CLAUDE.md` que apunta en vivo a tus reglas y router de 4 agentes.
+- **Claude Code**: Al abrir cualquier terminal, lee automáticamente `~/.claude/CLAUDE.md`.
 - **GitHub Copilot**: En cualquier proyecto de trabajo, corre:
   ```bash
-  agy-conf inject .
+  agents-conf inject .
   ```
-  Esto crea `.github/copilot-instructions.md`, `CLAUDE.md`, `.cursorrules` y `AGENTS.md` enlazados al framework.
+  Esto crea `.github/copilot-instructions.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules` y `AGENTS.md` enlazados al framework.
 
-### 3. Sincronización Bidireccional (`agy-conf sync`)
-Cualquier cambio que realices en reglas, skills o prompts desde cualquier editor se refleja de inmediato en el repo Git local gracias a los symlinks.
+### 3. Sincronización Bidireccional (`agents-conf sync`)
+Cualquier cambio que realices en reglas, skills, prompts o guardrails desde cualquier editor se refleja de inmediato en el repo Git local gracias a los symlinks.
 
 Para compartir cambios entre entornos:
 ```bash
 # Tras modificar algo en el trabajo:
-agy-conf sync "feat: ajuste en reglas de claude y copilot"
+agents-conf sync "feat: ajuste en reglas de claude y copilot"
 
 # Al llegar a casa (o antes de empezar):
-agy-conf sync
+agents-conf sync
 ```
 El comando realiza `pull --rebase`, añade los cambios locales, genera un commit con metadatos del equipo y sube a GitHub `origin main`.
-

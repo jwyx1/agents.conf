@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ==============================================================================
-# agy.conf — Universal Installer & Live Linker
+# agents.conf — Universal Installer & Live Linker
 # Connects Antigravity, Claude Code, GitHub Copilot, Cursor & Windsurf.
 # ==============================================================================
 
@@ -15,26 +15,40 @@ Usage: ./install.sh [options]
 Options:
   --link        (Default) Create live symlinks so modifications directly update Git.
   --copy        Copy files statically into ~/.gemini instead of linking.
+  --no-sidecar  Skip initializing Laya sidecar virtualenv.
   --help, -h    Show this help message.
 EOF
 }
 
 MODE="link"
+INIT_SIDECAR=true
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --link) MODE="link"; shift ;;
     --copy) MODE="copy"; shift ;;
+    --no-sidecar) INIT_SIDECAR=false; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
 done
 
+# Initialize Laya Sidecar venv if python3 is present
+if [ "$INIT_SIDECAR" = true ] && [ -d "${REPO_DIR}/sidecars/laya" ]; then
+  if [ ! -d "${REPO_DIR}/sidecars/laya/.venv" ] && command -v python3 >/dev/null 2>&1; then
+    echo "==> Initializing Laya Sidecar Python virtual environment..."
+    python3 -m venv "${REPO_DIR}/sidecars/laya/.venv"
+    "${REPO_DIR}/sidecars/laya/.venv/bin/pip" install -q -e "${REPO_DIR}/sidecars/laya" || true
+    echo "  [OK] Laya sidecar environment initialized."
+  fi
+fi
+
 if [ "$MODE" = "link" ]; then
-  echo "==> Setting up Live Multi-Agent Symlinks via agy-conf..."
-  "${REPO_DIR}/bin/agy-conf" link
+  echo "==> Setting up Live Multi-Agent Symlinks via agents-conf..."
+  "${REPO_DIR}/bin/agents-conf" link
 else
   TARGET_DIR="${GEMINI_DIR:-$HOME/.gemini}"
-  echo "==> Statically installing agy configuration to: ${TARGET_DIR}"
+  echo "==> Statically installing configuration to: ${TARGET_DIR}"
   mkdir -p "${TARGET_DIR}/config/rules"
   mkdir -p "${TARGET_DIR}/config/skills"
   mkdir -p "${TARGET_DIR}/scripts"
@@ -49,7 +63,7 @@ else
   [ -f "${REPO_DIR}/mcp_config.json" ] && cp "${REPO_DIR}/mcp_config.json" "${TARGET_DIR}/config/mcp_config.json"
   [ -f "${REPO_DIR}/GEMINI.md" ] && cp "${REPO_DIR}/GEMINI.md" "${TARGET_DIR}/GEMINI.md"
 
-  "${REPO_DIR}/bin/agy-conf" install-bin
+  "${REPO_DIR}/bin/agents-conf" install-bin
 fi
 
-echo "==> Installation complete! Run 'agy-conf status' for diagnostics."
+echo "==> Installation complete! Run 'agents-conf status' for diagnostics."

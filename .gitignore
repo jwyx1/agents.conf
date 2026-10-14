@@ -5,6 +5,8 @@ __pycache__/
 *.so
 .venv/
 env/
+*.egg-info/
+.pytest_cache/
 
 # OS / Editor artifacts
 .DS_Store

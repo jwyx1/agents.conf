@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RESOLVED_BIN="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")"
+SIDE_DIR="$(cd "$(dirname "$RESOLVED_BIN")/.." && pwd)"
+
+PYTHON_BIN="${SIDE_DIR}/.venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+  PYTHON_BIN="$(command -v python3 || echo 'python3')"
+fi
+
+PYTHONPATH="${SIDE_DIR}/src:${PYTHONPATH:-}" exec "$PYTHON_BIN" "${SIDE_DIR}/hooks/native_hook.py" "$@"

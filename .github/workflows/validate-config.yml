@@ -22,13 +22,15 @@ jobs:
       - name: Validate Shell scripts syntax
         run: |
           bash -n install.sh
-          bash -n bin/agy-conf
+          bash -n bin/agents-conf
+          bash -n sidecars/laya/bin/laya-hook
 
       - name: Validate Python syntax
         run: |
           python3 -m py_compile scripts/agy_statusline.py
+          python3 -m py_compile sidecars/laya/hooks/native_hook.py
 
-      - name: Test agy-conf CLI commands
+      - name: Test agents-conf CLI commands
         run: |
-          ./bin/agy-conf status
-          ./bin/agy-conf --help
+          ./bin/agents-conf status
+          ./bin/agents-conf --help

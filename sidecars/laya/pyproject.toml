@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "laya-agy-sidecar"
+version = "0.1.0"
+description = "System 1 Non-Autoregressive Decision Sidecar for Antigravity (agy) CLI workflows"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "jwx" }
+]
+dependencies = [
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch>=2.0.0",
+    "transformers>=4.40.0",
+    "onnxruntime>=1.17.0",
+]
+test = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+laya-sidecar = "laya_agy_sidecar.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

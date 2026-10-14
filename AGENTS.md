@@ -105,11 +105,12 @@ Las definiciones completas de skills y referencias especializadas residen en `sk
 
 ---
 
-## 7. Bidirectional Multi-Agent Sync (`agy-conf`)
+## 7. Bidirectional Multi-Agent Sync (`agents-conf`)
 
 Para compartir este repositorio entre entornos (laboral vs personal) y sincronizar cambios realizados por cualquier agente:
-- **`agy-conf link`**: Crea enlaces simbólicos vivos hacia los runtimes del sistema (`~/.gemini`, `~/.claude`, `~/.config`). Cualquier cambio manual o de un agente modifica este repositorio inmediatamente.
-- **`agy-conf sync [mensaje]`**: Realiza `pull --rebase`, añade archivos modificados, commitea con metadatos del host y ejecuta `push origin main`.
-- **`agy-conf inject <dir>`**: Inyecta las directivas de este repositorio (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`) en cualquier proyecto nuevo.
-- **`agy-conf status`**: Diagnóstico de salud de enlaces, estado Git y herramientas CLI.
+- **`agents-conf link`** (o `agy-conf link`): Crea enlaces simbólicos vivos hacia los runtimes del sistema (`~/.gemini`, `~/.claude`, `~/.config`) y activa el interceptor de seguridad Laya en `hooks.json`.
+- **`agents-conf sync [mensaje]`**: Realiza `pull --rebase`, añade archivos modificados (reglas, skills, guardrails), commitea con metadatos del host y ejecuta `push origin main`.
+- **`agents-conf inject <dir>`**: Inyecta las directivas de este repositorio (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`) en cualquier proyecto nuevo.
+- **`agents-conf status`**: Diagnóstico de salud de enlaces, estado Git, herramientas CLI y estado del sidecar Laya.
+- **Laya Sidecar (`sidecars/laya/`)**: Guardrails de seguridad en tiempo real (<2ms) que bloquean operaciones destructivas (`BLOCK`) y exigen confirmación en riesgos altos (`CONFIRM`).
 
