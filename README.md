@@ -114,14 +114,39 @@ Se prohíbe el uso de comandos lentos POSIX tradicionales en tareas automatizada
 
 ---
 
-## 🚀 Instalación y Sincronización Rápida
+## 🚀 Flujo Multi-Entorno (Trabajo vs Casa)
 
-Para sincronizar esta configuración en tu entorno local de **Antigravity** (`~/.gemini/`):
-
+### 1. Puesta en marcha en un entorno nuevo (Trabajo o Casa)
+Clona el repositorio e instala los enlaces vivos en 30 segundos:
 ```bash
-git clone https://github.com/jwyx1/agy.conf.git
-cd agy.conf
+git clone https://github.com/jwyx1/agy.conf.git ~/Projects/personal/agy.conf
+cd ~/Projects/personal/agy.conf
 ./install.sh
 ```
+Esto crea los enlaces simbólicos en:
+- `~/.gemini/` (Antigravity en casa)
+- `~/.claude/CLAUDE.md` (Claude Code en el trabajo/casa)
+- `~/.config/AGENTS.md` (Puntero global universal)
+- `~/.local/bin/agy-conf` (CLI global disponible en tu `$PATH`)
 
-El script copia y enlaza automáticamente las reglas, skills, scripts de statusline y configuraciones base, comprobando la presencia de las herramientas CLI modernas (`rg`, `fd`, `bat`, `eza`, etc.).
+### 2. Uso en el trabajo con GitHub Copilot y Claude Code
+- **Claude Code**: Al abrir cualquier terminal, lee automáticamente `~/.claude/CLAUDE.md` que apunta en vivo a tus reglas y router de 4 agentes.
+- **GitHub Copilot**: En cualquier proyecto de trabajo, corre:
+  ```bash
+  agy-conf inject .
+  ```
+  Esto crea `.github/copilot-instructions.md`, `CLAUDE.md`, `.cursorrules` y `AGENTS.md` enlazados al framework.
+
+### 3. Sincronización Bidireccional (`agy-conf sync`)
+Cualquier cambio que realices en reglas, skills o prompts desde cualquier editor se refleja de inmediato en el repo Git local gracias a los symlinks.
+
+Para compartir cambios entre entornos:
+```bash
+# Tras modificar algo en el trabajo:
+agy-conf sync "feat: ajuste en reglas de claude y copilot"
+
+# Al llegar a casa (o antes de empezar):
+agy-conf sync
+```
+El comando realiza `pull --rebase`, añade los cambios locales, genera un commit con metadatos del equipo y sube a GitHub `origin main`.
+

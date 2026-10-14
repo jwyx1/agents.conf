@@ -102,3 +102,14 @@ Las definiciones completas de skills y referencias especializadas residen en `sk
 - `skills/security-audit/` — AppSec, Cloud Zero Trust, Pentest, Secret hygiene.
 - `skills/ponytail*` — Suite Ponytail (review, audit, debt, gain, help).
 - `skills/i-have-adhd/` — Protocolo de comunicación neuro-adaptativo.
+
+---
+
+## 7. Bidirectional Multi-Agent Sync (`agy-conf`)
+
+Para compartir este repositorio entre entornos (laboral vs personal) y sincronizar cambios realizados por cualquier agente:
+- **`agy-conf link`**: Crea enlaces simbólicos vivos hacia los runtimes del sistema (`~/.gemini`, `~/.claude`, `~/.config`). Cualquier cambio manual o de un agente modifica este repositorio inmediatamente.
+- **`agy-conf sync [mensaje]`**: Realiza `pull --rebase`, añade archivos modificados, commitea con metadatos del host y ejecuta `push origin main`.
+- **`agy-conf inject <dir>`**: Inyecta las directivas de este repositorio (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`) en cualquier proyecto nuevo.
+- **`agy-conf status`**: Diagnóstico de salud de enlaces, estado Git y herramientas CLI.
+

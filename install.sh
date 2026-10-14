@@ -1,51 +1,55 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# agy.conf installer & linker
-# Installs or symlinks agy configuration to ~/.gemini/
+# ==============================================================================
+# agy.conf — Universal Installer & Live Linker
+# Connects Antigravity, Claude Code, GitHub Copilot, Cursor & Windsurf.
+# ==============================================================================
 
-TARGET_DIR="${GEMINI_DIR:-$HOME/.gemini}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "==> Installing agy configuration to: ${TARGET_DIR}"
+usage() {
+  cat << 'EOF'
+Usage: ./install.sh [options]
 
-mkdir -p "${TARGET_DIR}/config/rules"
-mkdir -p "${TARGET_DIR}/config/skills"
-mkdir -p "${TARGET_DIR}/scripts"
+Options:
+  --link        (Default) Create live symlinks so modifications directly update Git.
+  --copy        Copy files statically into ~/.gemini instead of linking.
+  --help, -h    Show this help message.
+EOF
+}
 
-# Copy or link rules
-echo "--> Syncing rules..."
-cp -r "${REPO_DIR}/rules/"* "${TARGET_DIR}/config/rules/"
-
-# Copy or link skills
-echo "--> Syncing skills..."
-cp -r "${REPO_DIR}/skills/"* "${TARGET_DIR}/config/skills/"
-
-# Copy scripts
-echo "--> Syncing scripts..."
-cp -r "${REPO_DIR}/scripts/"* "${TARGET_DIR}/scripts/"
-chmod +x "${TARGET_DIR}/scripts/"*.py 2>/dev/null || true
-
-# Config and manifest
-echo "--> Syncing base config files..."
-[ -f "${REPO_DIR}/config.json" ] && cp "${REPO_DIR}/config.json" "${TARGET_DIR}/config/config.json"
-[ -f "${REPO_DIR}/import_manifest.json" ] && cp "${REPO_DIR}/import_manifest.json" "${TARGET_DIR}/config/import_manifest.json"
-[ -f "${REPO_DIR}/mcp_config.json" ] && cp "${REPO_DIR}/mcp_config.json" "${TARGET_DIR}/config/mcp_config.json"
-
-# Root GEMINI.md
-if [ -f "${REPO_DIR}/GEMINI.md" ]; then
-  echo "--> Syncing GEMINI.md..."
-  cp "${REPO_DIR}/GEMINI.md" "${TARGET_DIR}/GEMINI.md"
-fi
-
-# Verification of modern CLI tools
-echo "--> Verifying Modern CLI Tooling availability:"
-for bin in rg fd bat eza sd procs; do
-  if command -v "$bin" >/dev/null 2>&1; then
-    echo "  [OK] $bin found"
-  else
-    echo "  [WARN] $bin missing (install via package manager or cargo)"
-  fi
+MODE="link"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --link) MODE="link"; shift ;;
+    --copy) MODE="copy"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
+  esac
 done
 
-echo "==> Installation complete! Ready for Antigravity, Cursor, Copilot, Windsurf & Claude."
+if [ "$MODE" = "link" ]; then
+  echo "==> Setting up Live Multi-Agent Symlinks via agy-conf..."
+  "${REPO_DIR}/bin/agy-conf" link
+else
+  TARGET_DIR="${GEMINI_DIR:-$HOME/.gemini}"
+  echo "==> Statically installing agy configuration to: ${TARGET_DIR}"
+  mkdir -p "${TARGET_DIR}/config/rules"
+  mkdir -p "${TARGET_DIR}/config/skills"
+  mkdir -p "${TARGET_DIR}/scripts"
+
+  cp -r "${REPO_DIR}/rules/"* "${TARGET_DIR}/config/rules/"
+  cp -r "${REPO_DIR}/skills/"* "${TARGET_DIR}/config/skills/"
+  cp -r "${REPO_DIR}/scripts/"* "${TARGET_DIR}/scripts/"
+  chmod +x "${TARGET_DIR}/scripts/"*.py 2>/dev/null || true
+
+  [ -f "${REPO_DIR}/config.json" ] && cp "${REPO_DIR}/config.json" "${TARGET_DIR}/config/config.json"
+  [ -f "${REPO_DIR}/import_manifest.json" ] && cp "${REPO_DIR}/import_manifest.json" "${TARGET_DIR}/config/import_manifest.json"
+  [ -f "${REPO_DIR}/mcp_config.json" ] && cp "${REPO_DIR}/mcp_config.json" "${TARGET_DIR}/config/mcp_config.json"
+  [ -f "${REPO_DIR}/GEMINI.md" ] && cp "${REPO_DIR}/GEMINI.md" "${TARGET_DIR}/GEMINI.md"
+
+  "${REPO_DIR}/bin/agy-conf" install-bin
+fi
+
+echo "==> Installation complete! Run 'agy-conf status' for diagnostics."

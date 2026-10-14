@@ -1,0 +1,34 @@
+name: Validate Configuration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON syntax
+        run: |
+          for f in $(find . -maxdepth 2 -name "*.json"); do
+            echo "Checking $f..."
+            python3 -m json.tool "$f" >/dev/null
+          done
+
+      - name: Validate Shell scripts syntax
+        run: |
+          bash -n install.sh
+          bash -n bin/agy-conf
+
+      - name: Validate Python syntax
+        run: |
+          python3 -m py_compile scripts/agy_statusline.py
+
+      - name: Test agy-conf CLI commands
+        run: |
+          ./bin/agy-conf status
+          ./bin/agy-conf --help

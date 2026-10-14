@@ -1,0 +1,248 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ==============================================================================
+# agy-conf — Agnostic Multi-Agent CLI & Live Synchronizer
+# Works seamlessly across Antigravity, Claude Code, GitHub Copilot, Cursor & Windsurf.
+# ==============================================================================
+
+RESOLVED_BIN="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")"
+REPO_DIR="$(cd "$(dirname "$RESOLVED_BIN")/.." && pwd)"
+BIN_PATH="$RESOLVED_BIN"
+
+log_info() { echo -e "\033[1;34m[agy-conf]\033[0m $*"; }
+log_ok()   { echo -e "\033[1;32m[OK]\033[0m $*"; }
+log_warn() { echo -e "\033[1;33m[WARN]\033[0m $*"; }
+log_err()  { echo -e "\033[1;31m[ERR]\033[0m $*" >&2; }
+
+# Helper to create safe symlinks with backup
+safe_symlink() {
+  local src="$1"
+  local dst="$2"
+  local dst_dir
+  dst_dir="$(dirname "$dst")"
+  mkdir -p "$dst_dir"
+
+  if [ -L "$dst" ]; then
+    local current_target
+    current_target="$(readlink "$dst")"
+    if [ "$current_target" = "$src" ]; then
+      log_ok "Already linked: $dst -> $src"
+      return 0
+    fi
+    rm "$dst"
+  elif [ -e "$dst" ]; then
+    local backup="${dst}.bak.$(date +%s)"
+    log_warn "Existing path found at $dst. Backing up to $backup"
+    mv "$dst" "$backup"
+  fi
+
+  ln -s "$src" "$dst"
+  log_ok "Linked: $dst -> $src"
+}
+
+cmd_link() {
+  log_info "Creating live symlinks from $REPO_DIR to system agent runtimes..."
+
+  # 1. Antigravity / Gemini CLI (~/.gemini)
+  local gemini_dir="${HOME}/.gemini"
+  mkdir -p "${gemini_dir}/config"
+  mkdir -p "${gemini_dir}/scripts"
+
+  safe_symlink "${REPO_DIR}/rules" "${gemini_dir}/config/rules"
+  safe_symlink "${REPO_DIR}/skills" "${gemini_dir}/config/skills"
+  safe_symlink "${REPO_DIR}/GEMINI.md" "${gemini_dir}/GEMINI.md"
+  safe_symlink "${REPO_DIR}/scripts/agy_statusline.py" "${gemini_dir}/scripts/agy_statusline.py"
+
+  [ -f "${REPO_DIR}/config.json" ] && [ ! -f "${gemini_dir}/config/config.json" ] && \
+    cp "${REPO_DIR}/config.json" "${gemini_dir}/config/config.json"
+  [ -f "${REPO_DIR}/import_manifest.json" ] && [ ! -f "${gemini_dir}/config/import_manifest.json" ] && \
+    cp "${REPO_DIR}/import_manifest.json" "${gemini_dir}/config/import_manifest.json"
+
+  # 2. Claude Code global (~/.claude/CLAUDE.md)
+  mkdir -p "${HOME}/.claude"
+  safe_symlink "${REPO_DIR}/CLAUDE.md" "${HOME}/.claude/CLAUDE.md"
+
+  # 3. Universal user home pointers (optional fallback for tools opening home)
+  # safe_symlink "${REPO_DIR}/AGENTS.md" "${HOME}/.config/AGENTS.md"
+  mkdir -p "${HOME}/.config"
+  safe_symlink "${REPO_DIR}/AGENTS.md" "${HOME}/.config/AGENTS.md"
+
+  # 4. Self install in ~/.local/bin
+  cmd_install_bin
+
+  log_ok "All agent runtimes linked! Live edits directly update Git repository."
+}
+
+cmd_install_bin() {
+  local local_bin="${HOME}/.local/bin"
+  mkdir -p "$local_bin"
+  if [ ! -L "${local_bin}/agy-conf" ] || [ "$(readlink "${local_bin}/agy-conf")" != "$BIN_PATH" ]; then
+    ln -sf "$BIN_PATH" "${local_bin}/agy-conf"
+    log_ok "Binary installed to ${local_bin}/agy-conf"
+  fi
+}
+
+cmd_status() {
+  log_info "Diagnosing agy.conf configuration state..."
+  echo "• Repository path: $REPO_DIR"
+
+  # Git status
+  cd "$REPO_DIR"
+  local branch
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
+  local remotes
+  remotes="$(git remote -v | head -n 1 | awk '{print $2}' || echo 'none')"
+  echo "• Git Branch: $branch"
+  echo "• Remote Origin: $remotes"
+
+  if git diff-index --quiet HEAD -- 2>/dev/null; then
+    log_ok "Git working tree is clean"
+  else
+    log_warn "Git working tree has uncommitted modifications:"
+    git status -s
+  fi
+
+  # Check key symlinks
+  echo "• Checking runtime symlinks:"
+  for target in "${HOME}/.gemini/config/rules" "${HOME}/.gemini/config/skills" "${HOME}/.gemini/GEMINI.md" "${HOME}/.claude/CLAUDE.md"; do
+    if [ -L "$target" ]; then
+      log_ok "  $target -> $(readlink "$target")"
+    elif [ -e "$target" ]; then
+      log_warn "  $target exists as static file/dir (run 'agy-conf link' to connect)"
+    else
+      echo "  [-] $target (not present)"
+    fi
+  done
+
+  # Tool verification
+  echo "• Modern CLI tools:"
+  for bin in rg fd bat eza sd procs; do
+    if command -v "$bin" >/dev/null 2>&1; then
+      echo "  [OK] $bin $(command -v "$bin")"
+    else
+      echo "  [WARN] $bin missing"
+    fi
+  done
+}
+
+setup_git_ssh() {
+  if [ -f "${HOME}/.ssh/passphrase" ] && [ -f "${HOME}/.ssh/id_ed25519" ]; then
+    local askpass_script="${HOME}/.ssh/agy_askpass.sh"
+    if [ ! -f "$askpass_script" ]; then
+      cat << 'PASS_EOF' > "$askpass_script"
+#!/bin/sh
+cat "$HOME/.ssh/passphrase"
+PASS_EOF
+      chmod 700 "$askpass_script"
+    fi
+    export SSH_ASKPASS="$askpass_script"
+    export SSH_ASKPASS_REQUIRE="force"
+    export DISPLAY="${DISPLAY:-d}"
+    export SSH_AUTH_SOCK=""
+    export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new -i ${HOME}/.ssh/id_ed25519"
+  fi
+}
+
+cmd_sync() {
+  log_info "Starting bidirectional sync with origin..."
+  setup_git_ssh
+  cd "$REPO_DIR"
+
+  local has_local_changes=false
+  if git status --porcelain | grep -q .; then
+    has_local_changes=true
+    local hostname_str
+    hostname_str="$(hostname 2>/dev/null || echo 'workstation')"
+    local date_str
+    date_str="$(date '+%Y-%m-%d %H:%M')"
+    local commit_msg="${*:-sync: auto-update from ${hostname_str} [${date_str}]}"
+
+    log_info "Staging local modifications..."
+    git add .
+    git commit -m "$commit_msg"
+    log_ok "Committed local changes: $commit_msg"
+  fi
+
+  # Pull remote updates on top of local changes
+  log_info "Pulling remote updates (rebase)..."
+  if ! git pull --rebase origin main; then
+    log_err "Rebase failed due to conflicts. Aborting rebase to preserve state."
+    git rebase --abort 2>/dev/null || true
+    exit 1
+  fi
+  log_ok "Rebased cleanly with origin/main"
+
+  # Push if we made local commits or are ahead
+  local ahead
+  ahead="$(git rev-list --count origin/main..HEAD 2>/dev/null || echo '0')"
+  if [ "$ahead" -gt 0 ]; then
+    log_info "Pushing $ahead commit(s) to remote origin main..."
+    git push origin main
+    log_ok "Sync completed successfully and pushed to GitHub!"
+  else
+    log_ok "Working tree and remote are fully in sync."
+  fi
+}
+
+cmd_inject() {
+  local target_dir="${1:-}"
+  if [ -z "$target_dir" ]; then
+    log_err "Usage: agy-conf inject <path/to/project>"
+    exit 1
+  fi
+
+  if [ ! -d "$target_dir" ]; then
+    log_err "Target directory '$target_dir' does not exist."
+    exit 1
+  fi
+
+  target_dir="$(cd "$target_dir" && pwd)"
+  log_info "Injecting universal agent directives into project: $target_dir"
+
+  # 1. Inject or link AGENTS.md
+  safe_symlink "${REPO_DIR}/AGENTS.md" "${target_dir}/AGENTS.md"
+
+  # 2. Inject or link CLAUDE.md
+  safe_symlink "${REPO_DIR}/CLAUDE.md" "${target_dir}/CLAUDE.md"
+
+  # 3. Inject or link .cursorrules
+  safe_symlink "${REPO_DIR}/.cursorrules" "${target_dir}/.cursorrules"
+
+  # 4. Inject or link .windsurfrules
+  safe_symlink "${REPO_DIR}/.windsurfrules" "${target_dir}/.windsurfrules"
+
+  # 5. Inject GitHub Copilot instructions (.github/copilot-instructions.md)
+  mkdir -p "${target_dir}/.github"
+  safe_symlink "${REPO_DIR}/.github/copilot-instructions.md" "${target_dir}/.github/copilot-instructions.md"
+
+  log_ok "Project successfully configured! Any agent in $target_dir will operate with agy.conf standards."
+}
+
+usage() {
+  cat << 'EOF'
+agy-conf — Universal AI Agent Synchronizer & Workspace Orchestrator
+
+Usage:
+  agy-conf link               Create live symlinks to ~/.gemini, ~/.claude, etc.
+  agy-conf sync [message]     Pull changes, commit local edits, and push to origin.
+  agy-conf inject <dir>       Inject universal directives (Copilot, Claude, Cursor) into any project.
+  agy-conf status             Show diagnostics, symlink health, git state, and CLI tooling.
+  agy-conf install-bin        Install agy-conf executable into ~/.local/bin/
+
+Examples:
+  agy-conf link
+  agy-conf sync "feat: added new rust clippy rule"
+  agy-conf inject ~/Projects/personal/my-new-app
+EOF
+}
+
+case "${1:-}" in
+  link)        cmd_link ;;
+  sync)        shift; cmd_sync "$@" ;;
+  inject)      shift; cmd_inject "$@" ;;
+  status)      cmd_status ;;
+  install-bin) cmd_install_bin ;;
+  -h|--help|help) usage ;;
+  *)           usage; exit 1 ;;
+esac
