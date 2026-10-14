@@ -129,39 +129,76 @@ Se prohíbe el uso de comandos lentos POSIX tradicionales en tareas automatizada
 
 ---
 
-## 🚀 Flujo Multi-Entorno (Trabajo vs Casa)
+## 🚀 Guía de Puesta en Marcha Rápida (Cualquier PC)
 
-### 1. Puesta en marcha en un entorno nuevo (Trabajo o Casa)
-Clona el repositorio e instala los enlaces vivos en 30 segundos:
+### Paso 1: Instalación inicial (Una sola vez por máquina — 30 seg)
+Ejecuta en tu terminal (Linux, macOS o WSL):
 ```bash
-git clone https://github.com/jwyx1/agents.conf.git ~/Projects/personal/agents.conf
-cd ~/Projects/personal/agents.conf
+git clone https://github.com/jwyx1/agents.conf.git ~/.config/agents.conf
+cd ~/.config/agents.conf
 ./install.sh
 ```
-Esto crea automáticamente:
-- `~/.gemini/` enlazado a las reglas, skills y statusline.
-- `~/.gemini/config/hooks.json` configurado con Laya Guardrail en tiempo real.
-- `~/.claude/CLAUDE.md` para Claude Code.
-- `~/.config/AGENTS.md` como puntero global universal.
-- `agents-conf` y `agy-conf` disponibles en tu `$PATH` (`~/.local/bin/`).
+*¿Qué hace automáticamente?*
+- Enlaza en vivo las directivas globales (`~/.gemini/`, `~/.claude/CLAUDE.md`, `~/.config/AGENTS.md`).
+- Instala los comandos globales `agents-conf` y `agy-conf` en `~/.local/bin/`.
+- Configura el interceptor de seguridad Laya en `~/.gemini/config/hooks.json`.
 
-### 2. Uso en el trabajo con GitHub Copilot y Claude Code
-- **Claude Code**: Al abrir cualquier terminal, lee automáticamente `~/.claude/CLAUDE.md`.
-- **GitHub Copilot**: En cualquier proyecto de trabajo, corre:
+---
+
+### Paso 2: Cómo usarlo según el agente que abras
+
+#### 🧠 1. Con Claude Code (CLI)
+No necesitas configurar nada adicional dentro de tus proyectos.
+1. Abre tu terminal en la carpeta de cualquier proyecto:
+   ```bash
+   cd ~/mi-proyecto
+   claude
+   ```
+2. Claude Code detecta automáticamente `~/.claude/CLAUDE.md` a nivel global y operará con el estilo ADHD y el router `@planner` / `@coder` sin configuraciones locales.
+
+#### 🐙 2. Con GitHub Copilot (VS Code / JetBrains)
+Para que Copilot Chat y sus asistentes apliquen las directivas en un proyecto concreto:
+1. Abre la terminal dentro de la raíz del proyecto.
+2. Ejecuta:
+   ```bash
+   agents-conf inject .
+   ```
+3. Esto crea `.github/copilot-instructions.md` enlazado a `agents.conf`. Copilot aplicará de inmediato el protocolo de respuestas y directivas.
+
+#### 🤖 3. Con Antigravity (`agy` CLI)
+1. Ejecuta `agy` desde cualquier directorio:
+   ```bash
+   agy
+   ```
+2. Tu terminal cargará automáticamente:
+   - Statusline con métricas de tokens y cuotas (`scripts/agy_statusline.py`).
+   - Guardrails Laya bloqueando acciones destructivas en <2 ms (`sidecars/laya`).
+   - Todas las reglas y router de 4 agentes (`rules/` y `skills/`).
+
+#### 💻 4. Con Cursor IDE
+- **En cualquier proyecto**: Ejecuta `agents-conf inject .` en la raíz del proyecto. Cursor leerá `.cursorrules` y aplicará las directivas en cada prompt.
+- **Directo en agents.conf**: Si abres la carpeta de `agents.conf` en Cursor, este carga automáticamente `.cursor/rules/*.mdc`.
+
+#### 🌊 5. Con Windsurf (Cascade)
+1. En la raíz de tu proyecto, corre:
+   ```bash
+   agents-conf inject .
+   ```
+2. Windsurf cargará `.windsurfrules` y Cascade adoptará el comportamiento y las restricciones de gobernanza del sistema.
+
+---
+
+### Paso 3: Sincronización diaria (Trabajo ↔ Casa)
+
+Cualquier edición que hagas en reglas, skills o prompts desde cualquier editor modifica directamente los archivos del repositorio gracias a los symlinks vivos.
+
+- **Al terminar de trabajar (en la oficina o en casa):**
   ```bash
-  agents-conf inject .
+  agents-conf sync "feat: ajuste en reglas de claude y copilot"
   ```
-  Esto crea `.github/copilot-instructions.md`, `CLAUDE.md`, `.cursorrules`, `.windsurfrules` y `AGENTS.md` enlazados al framework.
+- **Al comenzar el día en la otra máquina:**
+  ```bash
+  agents-conf sync
+  ```
+  *(Descarga los cambios de GitHub mediante `pull --rebase` y deja tu entorno 100% sincronizado).*
 
-### 3. Sincronización Bidireccional (`agents-conf sync`)
-Cualquier cambio que realices en reglas, skills, prompts o guardrails desde cualquier editor se refleja de inmediato en el repo Git local gracias a los symlinks.
-
-Para compartir cambios entre entornos:
-```bash
-# Tras modificar algo en el trabajo:
-agents-conf sync "feat: ajuste en reglas de claude y copilot"
-
-# Al llegar a casa (o antes de empezar):
-agents-conf sync
-```
-El comando realiza `pull --rebase`, añade los cambios locales, genera un commit con metadatos del equipo y sube a GitHub `origin main`.
